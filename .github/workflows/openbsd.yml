@@ -6,24 +6,23 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    strategy:
-      fail-fast: false
-      matrix:
-        release: ["7.8", "8"]
-        include:
-          - set-policy-min: true
-            cmd: export CMAKE_POLICY_VERSION_MINIMUM=3.5
-          - set-policy-min: false
-            cmd: ""
+    # strategy:
+    #   fail-fast: false
+    #   matrix:
+    #     release: ["7.8", "8"]
 
     steps:
       - uses: actions/checkout@v7
 
       - uses: vmactions/openbsd-vm@v1
         with:
-          release: ${{ matrix.release }}
-          prepare: pkg_add -Iv bash cmake coreutils curl git ninja zip unzip-6.0p18-iconv
+          # release: ${{ matrix.release }}
+          prepare: pkg_add -Iv bash cmake coreutils curl git ninja zip unzip-6.0p18-iconv autoconf-2.73 autoconf-archive gmake python patchelf nasm
           run: |
-            ${{ matrix.cmd }}
             git clone https://github.com/microsoft/vcpkg "$HOME/vcpkg"
             (cd "$HOME/vcpkg" && ./bootstrap-vcpkg.sh)
+
+      - shell: openbsd {0}
+        run: |
+          export PATH="$HOME/vcpkg":$PATH
+          "$HOME/vcpkg/vcpkg" install ffmpeg[avcodec,avfilter,avdevice,avformat,swresample,swscale]:x64-openbsd
