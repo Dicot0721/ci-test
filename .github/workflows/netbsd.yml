@@ -1,0 +1,46 @@
+name: NetBSD Test
+
+on: [push]
+
+jobs:
+  test-gcc:
+    name: Compile vcpkg (${{ matrix.gcc-version }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        gcc-version: [gcc9, gcc10, gcc11, gcc12, gcc13, gcc14]
+
+    steps:
+      - uses: vmactions/netbsd-vm@v1
+        with:
+          prepare:  |
+              /usr/sbin/pkg_add pkgin
+              pkgin -y install bash cmake curl git-base ninja-build zip unzip ${{ matrix.gcc-version }}
+          run: |
+            export PATH="/usr/pkg/${{ matrix.gcc-version }}/bin:$PATH"
+            export LD_LIBRARY_PATH="/usr/pkg/lib" # for libcurl
+            git clone https://github.com/microsoft/vcpkg "$HOME/vcpkg"
+            (cd "$HOME/vcpkg" && ./bootstrap-vcpkg.sh)
+
+  test-netbsd:
+    name: Compile vcpkg (NetBSD ${{ matrix.netbsd-release }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        netbsd-release: [9, 10, 11]
+
+    steps:
+      - uses: vmactions/netbsd-vm@v1
+        with:
+          release: ${{ matrix.netbsd-release }}
+          prepare:  |
+              /usr/sbin/pkg_add pkgin
+              pkgin -y install bash cmake curl git-base ninja-build zip unzip
+          run: |
+            export LD_LIBRARY_PATH="/usr/pkg/lib" # for libcurl
+            git clone https://github.com/microsoft/vcpkg "$HOME/vcpkg"
+            (cd "$HOME/vcpkg" && ./bootstrap-vcpkg.sh)
