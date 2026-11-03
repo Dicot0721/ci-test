@@ -1,0 +1,36 @@
+name: NetBSD Test
+
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: netbsd {0}
+
+    steps:
+      - name: Set up environment
+        uses: vmactions/netbsd-vm@v1
+        with:
+          prepare: |
+            /usr/sbin/pkg_add pkgin
+            pkgin -y install bash cmake curl git-base ninja-build zip unzip autoconf autoconf-archive gmake pkgconf python312 patchelf gcc14
+          run: |
+            export PATH="/usr/pkg/gcc14/bin:$PATH"
+            export LD_LIBRARY_PATH="/usr/pkg/lib"
+            git clone https://github.com/microsoft/vcpkg "$HOME/vcpkg"
+            (cd "$HOME/vcpkg" && ./bootstrap-vcpkg.sh)
+
+      - name: Show python version
+        run: |
+          python --version
+          python3 --version
+          python3.12 --version
+
+      - name: Install vcpkg packages
+        run: |
+          export PATH="$HOME/vcpkg:/usr/pkg/gcc14/bin:$PATH"
+          export LD_LIBRARY_PATH="/usr/pkg/lib"
+          vcpkg install vcpkg-tool-meson
